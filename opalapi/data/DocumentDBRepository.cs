@@ -16,18 +16,33 @@ namespace opalapi.data
         private readonly string Key = "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
         private readonly string DatabaseId = "opalDatabase";
 
-        internal static Task CreateUserAsync(userinformation userinfo)
-        {
-            throw new NotImplementedException();
-        }
-
-        private readonly DocumentClient client;
+       private readonly DocumentClient client;
 
         public DocumentDBRepository()
         {
             client = new DocumentClient(new Uri(Endpoint), Key);
         }
-        public async Task<IEnumerable<T>> GetItemsAsync(string collectionId)
+        public async Task<IEnumerable<T>> GetLoginUserAsync(string emailid, string password)
+        {
+            IDocumentQuery<T> query = client.CreateDocumentQuery<T>(
+                 UriFactory.CreateDocumentCollectionUri(DatabaseId, emailid),
+                 new FeedOptions
+                 {
+                     PopulateQueryMetrics = true,
+                     MaxItemCount = -1,
+                     MaxDegreeOfParallelism = -1,
+                     EnableCrossPartitionQuery = true
+                 }).AsDocumentQuery();
+
+            List<T> results = new List<T>();
+            while (query.HasMoreResults)
+            {
+                results.AddRange(await query.ExecuteNextAsync<T>());
+            }
+
+            return results;
+        }
+        public async Task<IEnumerable<T>> GetUserAsync(string collectionId)
         {
             IDocumentQuery<T> query = client.CreateDocumentQuery<T>(
                 UriFactory.CreateDocumentCollectionUri(DatabaseId, collectionId),
@@ -46,6 +61,16 @@ namespace opalapi.data
             }
 
             return results;
+        }
+      
+
+        public async Task<Document> CreateUserAsync(T item, string collectionId)
+        {
+            return await client.CreateDocumentAsync(UriFactory.CreateDocumentCollectionUri(DatabaseId, collectionId), item);
+        }
+        public async Task<Document> UpdateItemAsync(string id, T item, string collectionId)
+        {
+            return await client.ReplaceDocumentAsync(UriFactory.CreateDocumentUri(DatabaseId, collectionId, id), item);
         }
         public async Task<IEnumerable<T>> GetArticlesAsync(string searchkey)
         {
@@ -69,12 +94,16 @@ namespace opalapi.data
             return results;
         }
 
-        public async Task<Document> CreateUserAsync(T item, string collectionId)
+        public Task<IEnumerable<T>> UserCredAsync(string username, string password)
         {
-            return await client.CreateDocumentAsync(UriFactory.CreateDocumentCollectionUri(DatabaseId, collectionId), item);
+            throw new NotImplementedException();
         }
 
-       
+        public Task<IEnumerable<T>> Authenticate(string emailid, string password)
+        {
+            throw new NotImplementedException();
+        }
+
     }
 }
 

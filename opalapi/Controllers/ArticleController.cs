@@ -47,7 +47,7 @@ namespace opalapi.Controllers
         [HttpGet("{searchkey}")]
         public async Task<IEnumerable<articleinformation>> Get(string searchkey)
         {
-            var articles = await Respository.GetItemsAsync(CollectionId);
+            var articles = await Respository.GetUserAsync(CollectionId);
             List<articleinformation> article = new List<articleinformation>();
             searchkey = searchkey.ToLower();
             foreach (var art in articles)
@@ -59,16 +59,7 @@ namespace opalapi.Controllers
             }
             return article;
         }
-        [HttpPost]
-        public async Task<userinformation> CreateUserAsync([FromBody] userinformation userinfo)
-        {
-            if (ModelState.IsValid)
-            {
-                await DocumentDBRepository<userinformation>.CreateUserAsync(userinfo);
-                return userinfo;
-            }
-            return null;
-        }
 
+        
     }
 }

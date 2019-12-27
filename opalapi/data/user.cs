@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace opalapi.data
 {
-    public class userinformation
+    public class user
     {
         [JsonProperty(PropertyName = "id")]
         public string id { get; set; }

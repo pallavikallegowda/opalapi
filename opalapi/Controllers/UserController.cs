@@ -5,24 +5,68 @@ using System.Threading.Tasks;
 using opalapi.data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using opalapi.data;
-using System.Web.Http;
 
 
 namespace opalapi.Controllers
 {
-    [RoutePrefix("api/[userinformation]")]
-    public class UserController : ApiController
+
+    [Route("api/[controller]")]
+    [ApiController]
+    public class UserController : ControllerBase
     {
-        [System.Web.Http.HttpPost]
-        public async Task<userinformation> CreateAsync([System.Web.Http.FromBody] userinformation userinfo)
+        private readonly IDocumentDBRepository<user> Respository;
+        private readonly IHubContext<BroadcastHub, IHubClient> _hubContext;
+        private readonly string CollectionId;
+        //articleinformation article = new articleinformation();
+        public UserController(
+            IDocumentDBRepository<user> Respository,
+            IHubContext<BroadcastHub, IHubClient> hubContext)
         {
-            if (ModelState.IsValid)
+            _hubContext = hubContext;
+            this.Respository = Respository;
+            CollectionId = "userContainer";
+        }
+        [HttpGet]
+        public async Task<IEnumerable<user>> Get()
+        {
+            return await Respository.GetUserAsync(CollectionId);
+        }
+
+         [HttpPost]
+        public async Task<bool> Post([FromBody]user user)
+        {
+            try
             {
-                await DocumentDBRepository<userinformation>.CreateUserAsync(userinfo);
-                return userinfo;
+                if (ModelState.IsValid)
+                {
+                    user.id = null;
+                    await Respository.CreateUserAsync(user, CollectionId);
+                    await _hubContext.Clients.All.BroadcastMessage();
+                }
+                return true;
             }
-            return null;
+            catch
+            {
+                return false;
+            }
+
+        }
+        [HttpPut]
+        public async Task<bool> Put([FromBody]user user)
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    await Respository.UpdateItemAsync(user.id, user, CollectionId);
+                    await _hubContext.Clients.All.BroadcastMessage();
+                }
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }
